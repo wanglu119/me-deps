@@ -12,7 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go/request"
 )
 
-type BasicAuthVertifyFunc func(username string, password string, d WebData) bool
+type BasicAuthVertifyFunc func(username string, password string, d WebData, r *http.Request) bool
 type BasicAuth struct {
 	AuthVertify BasicAuthVertifyFunc
 }
@@ -43,13 +43,15 @@ func (ba *BasicAuth) WithBasicAuth(fn HandleFunc) HandleFunc {
 			return
 		}
 
-		if ba.AuthVertify(pair[0], pair[1], d) {
+		if ba.AuthVertify(pair[0], pair[1], d, r) {
 			d.SetResponse(res)
 			fn(w, r, d)
 			return
 		} else {
-			res.Status = http.StatusNotAcceptable
-			res.Data = "auth fail"
+			if res.Status == 200 {
+				res.Status = http.StatusNotAcceptable
+				res.Data = "auth fail"
+			}
 			return
 		}
 	}
