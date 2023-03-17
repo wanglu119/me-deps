@@ -1,4 +1,5 @@
-// +build !windows
+//go:build linux || dragonfly
+// +build linux dragonfly
 
 package utils
 
