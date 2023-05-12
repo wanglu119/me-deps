@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"time"
+    "time"
 )
 
 type Time time.Time
@@ -26,4 +26,8 @@ func (t Time) MarshalJSON() ([]byte, error) {
 
 func (t Time) String() string {
     return time.Time(t).Format(timeFormart)
+}
+
+func (t Time) Format(format string) string {
+    return time.Time(t).Format(format)
 }
