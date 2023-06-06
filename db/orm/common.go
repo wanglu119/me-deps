@@ -75,8 +75,11 @@ func (c *Common) DeleteMany(bean interface{}) error {
 }
 
 func (c *Common) Count(bean interface{}) (int64, error) {
-
 	return x.Count(bean)
+}
+
+func (c *Common) Sum(bean interface{}, colName string) (float64, error) {
+	return x.Sum(bean, colName)
 }
 
 func (cm *Common) FindWithSort(beans interface{}, condiBean interface{}, sort *common.SortInfo) error {
