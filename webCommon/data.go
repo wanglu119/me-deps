@@ -13,6 +13,7 @@ type WebData interface {
 	GetAuthData() interface{}
 	SetAuthData(interface{})
 	SetHttpHeader(http.Header)
+	SetHttpRequest(*http.Request)
 
 	GetFs() afero.Fs
 }
@@ -20,6 +21,7 @@ type WebData interface {
 type WebDataImplPart struct {
 	Resp   *Response
 	Header http.Header
+	Req    *http.Request
 }
 
 func (wdip *WebDataImplPart) GetResponse() *Response {
@@ -31,6 +33,9 @@ func (wdip *WebDataImplPart) SetResponse(resp *Response) {
 }
 func (wdip *WebDataImplPart) SetHttpHeader(header http.Header) {
 	wdip.Header = header
+}
+func (wdip *WebDataImplPart) SetHttpRequest(req *http.Request) {
+	wdip.Req = req
 }
 
 type HandleFunc func(w http.ResponseWriter, r *http.Request, d WebData)
@@ -45,6 +50,7 @@ func (wh *WebHandler) handle(fn HandleFunc, prefix string) http.Handler {
 		res := NewResponse(w)
 		d.SetResponse(res)
 		d.SetHttpHeader(r.Header)
+		d.SetHttpRequest(r)
 		defer res.SendJson()
 		fn(w, r, d)
 	})
