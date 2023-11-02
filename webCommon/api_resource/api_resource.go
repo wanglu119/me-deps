@@ -34,7 +34,7 @@ func init() {
 
 func GetScope(subDir string) (scope string) {
 	scope = filepath.Join(BaseScope, subDir)
-	err := os.MkdirAll(BaseScope, fs.ModeDir)
+	err := os.MkdirAll(scope, fs.ModeDir)
 	if err != nil {
 		log.Error(err)
 		panic(err)
