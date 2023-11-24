@@ -87,6 +87,11 @@ type JwtAuthClaims struct {
 type JwtAuth struct {
 }
 
+func (ja *JwtAuth) ExtractToken(r *http.Request) (string, error) {
+	extractor := &Extractor{}
+	return extractor.ExtractToken(r)
+}
+
 func (ja *JwtAuth) WithJwt(fn HandleFunc) HandleFunc {
 	return func(w http.ResponseWriter, r *http.Request, d WebData) {
 		res := d.GetResponse()
@@ -112,7 +117,6 @@ func (ja *JwtAuth) WithJwt(fn HandleFunc) HandleFunc {
 		if expired {
 			w.Header().Add("X-Renew-Token", "true")
 		}
-
 		fn(w, r, d)
 	}
 }
