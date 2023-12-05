@@ -32,8 +32,9 @@ func init() {
 	}
 }
 
-func GetScope(subDir string) (scope string) {
-	scope = filepath.Join(BaseScope, subDir)
+func GetScope(subDir ...string) (scope string) {
+	p := append([]string{BaseScope}, subDir...)
+	scope = filepath.Join(p...)
 	err := os.MkdirAll(scope, fs.ModeDir)
 	if err != nil {
 		log.Error(err)
