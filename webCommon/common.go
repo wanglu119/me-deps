@@ -46,7 +46,7 @@ func ProcError(res *Response, err error) {
 
 func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Connection", "close")
+		// w.Header().Set("Connection", "close")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST,GET,OPTIONS,DELETE,PUT,PATCH")
 		//w.Header().Set("Access-Control-Allow-Headers", `Origin,X-Requested-With,Content-Type,Accept,Authorization,token,X-Auth,x-auth,captchaId,captchaVal`)
