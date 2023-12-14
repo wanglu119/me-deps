@@ -42,6 +42,7 @@ func GetStaticHandlers(assetsFs fs.FS) (index, static webCommon.HandleFunc) {
 		}
 		res.IsSend = false
 
+		w.Header().Set("Connection", "close")
 		w.Header().Set("x-xss-protection", "1; mode=block")
 		handleWithStaticData(w, r, d, assetsFs, "index.html", "text/html; charset=utf-8")
 	}
@@ -61,6 +62,7 @@ func GetStaticHandlers(assetsFs fs.FS) (index, static webCommon.HandleFunc) {
 		}()
 
 		const maxAge = 86400 // 1 day
+		w.Header().Set("Connection", "close")
 		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", maxAge))
 
 		urlPath := r.URL.Path
