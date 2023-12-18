@@ -2,6 +2,7 @@ package webCommon
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -90,6 +91,35 @@ type JwtAuth struct {
 func (ja *JwtAuth) ExtractToken(r *http.Request) (string, error) {
 	extractor := &Extractor{}
 	return extractor.ExtractToken(r)
+}
+
+func (ja *JwtAuth) VerifyToken(r *http.Request, authToken string) (bool, error) {
+	keyFunc := func(token *jwt.Token) (interface{}, error) {
+		return []byte(authToken), nil
+	}
+
+	standardClaims := &jwt.StandardClaims{
+		IssuedAt:  time.Now().Unix(),
+		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+		Issuer:    "wl",
+	}
+	token, err := request.ParseFromRequest(r, &Extractor{}, keyFunc, request.WithClaims(standardClaims))
+	if err != nil {
+		log.Error(err)
+		return false, err
+	}
+	if !token.Valid {
+		err = errors.New("valid to token fail")
+		log.Error(err)
+		return false, err
+	}
+	expired := !standardClaims.VerifyExpiresAt(time.Now().Add(24*time.Hour).Unix(), true)
+	if expired {
+		err = errors.New("token expired")
+		log.Error(err)
+		return false, err
+	}
+	return true, nil
 }
 
 func (ja *JwtAuth) WithJwt(fn HandleFunc) HandleFunc {
