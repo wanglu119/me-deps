@@ -12,8 +12,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/xid"
 	"github.com/spf13/afero"
 	"github.com/wanglu119/me-deps/webCommon"
@@ -22,6 +24,7 @@ import (
 )
 
 var BaseScope string
+var validate = validator.New()
 
 func init() {
 	var err error
@@ -159,13 +162,20 @@ func writeFile(fs afero.Fs, dst string, in io.Reader) (os.FileInfo, error) {
 func ResourceDeleteHandler() webCommon.HandleFunc {
 	return func(w http.ResponseWriter, r *http.Request, d webCommon.WebData) {
 		res := d.GetResponse()
+		var err error
+		defer func() {
+			if err != nil {
+				webCommon.ProcError(res, err)
+				return
+			}
+		}()
 
 		if r.URL.Path == "/" {
 			res.Status = http.StatusForbidden
 			return
 		}
 
-		_, err := files.NewFileInfo(files.FileOptions{
+		_, err = files.NewFileInfo(files.FileOptions{
 			Fs:     d.GetFs(),
 			Path:   r.URL.Path,
 			Modify: true,
@@ -174,14 +184,12 @@ func ResourceDeleteHandler() webCommon.HandleFunc {
 		})
 		if err != nil {
 			log.Error(err)
-			webCommon.ProcError(res, err)
 			return
 		}
 
 		err = d.GetFs().RemoveAll(r.URL.Path)
 		if err != nil {
 			log.Error(err)
-			webCommon.ProcError(res, err)
 			return
 		}
 	}
@@ -288,50 +296,95 @@ func ResourcePatchHandler() webCommon.HandleFunc {
 			}
 		}()
 
-		src := r.URL.Path
-		dst := r.URL.Query().Get("destination")
-		action := r.URL.Query().Get("action")
+		param := &struct {
+			Src      string `json:"src" validate:"required"`
+			Dst      string `json:"dst" validate:"required"`
+			Action   string `json:"Action" validate:"required"`
+			Rename   bool   `json:"rename"`
+			Override bool   `json:"override"`
+		}{}
 
-		if dst == "/" || src == "/" {
+		if r.URL.Path == "/" {
+			err = json.NewDecoder(r.Body).Decode(param)
+			if err != nil {
+				log.Error(err)
+				res.Status = http.StatusInternalServerError
+				return
+			}
+		} else {
+			param.Src = r.URL.Path
+			param.Dst = r.URL.Query().Get("destination")
+			param.Action = r.URL.Query().Get("action")
+			param.Override = r.URL.Query().Get("override") == "true"
+			param.Rename = r.URL.Query().Get("rename") == "true"
+		}
+
+		err = validate.Struct(param)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		if param.Dst == "/" || param.Src == "/" {
 			res.Status = http.StatusForbidden
 			return
 		}
-		if err = checkParent(src, dst); err != nil {
-			log.Error(err)
-			res.Status = http.StatusBadRequest
-			return
+		if runtime.GOOS != "windows" {
+			if err = checkParent(param.Src, param.Dst); err != nil {
+				log.Error(err)
+				res.Status = http.StatusBadRequest
+				return
+			}
 		}
 
-		override := r.URL.Query().Get("override") == "true"
-		rename := r.URL.Query().Get("rename") == "true"
-		if !override && !rename {
-			if _, err = d.GetFs().Stat(dst); err == nil {
+		if !param.Override && !param.Rename {
+			if s, err := d.GetFs().Stat(param.Dst); err == nil {
+				res.Data = s
 				res.Status = http.StatusConflict
 				return
 			}
 		}
 
-		if rename {
-			dst = addVersionSuffix(dst, d.GetFs())
+		if param.Rename {
+			param.Dst = addVersionSuffix(param.Dst, d.GetFs())
 		}
 
-		switch action {
+		switch param.Action {
 		// TODO: use enum
 		case "copy":
-			err = fileutils.Copy(d.GetFs(), src, dst)
+			err = fileutils.Copy(d.GetFs(), param.Src, param.Dst)
 			if err != nil {
 				log.Error(err)
 			}
 			return
 		case "rename":
-			dst = filepath.Clean("/" + dst)
-			err = d.GetFs().Rename(src, dst)
-			if err != nil {
-				log.Error(err)
+			if runtime.GOOS == "windows" {
+				if param.Src[0] == param.Dst[0] {
+					err = d.GetFs().Rename(param.Src, param.Dst)
+					if err != nil {
+						log.Error(err)
+					}
+				} else {
+					err = fileutils.Copy(d.GetFs(), param.Src, param.Dst)
+					if err != nil {
+						log.Error(err)
+						return
+					}
+					err = d.GetFs().RemoveAll(param.Src)
+					if err != nil {
+						log.Error(err)
+					}
+				}
+			} else {
+				param.Dst = filepath.Clean("/" + param.Dst)
+				err = d.GetFs().Rename(param.Src, param.Dst)
+				if err != nil {
+					log.Error(err)
+				}
 			}
 			return
 		default:
-			err = errors.New(fmt.Sprintf("unsupported action %s", action))
+			err = errors.New(fmt.Sprintf("unsupported action %s", param.Action))
 			return
 		}
 	}
