@@ -86,6 +86,7 @@ type JwtAuthClaims struct {
 }
 
 type JwtAuth struct {
+	ExpSec uint64
 }
 
 func (ja *JwtAuth) ExtractToken(r *http.Request) (string, error) {
@@ -152,10 +153,14 @@ func (ja *JwtAuth) WithJwt(fn HandleFunc) HandleFunc {
 }
 
 func (ja *JwtAuth) createJwtStandardClaims(d WebData) *JwtAuthClaims {
+	expSec := ja.ExpSec
+	if expSec == 0 {
+		expSec = 24 * 60 * 60
+	}
 	standardClaims := &JwtAuthClaims{
 		&jwt.StandardClaims{
 			IssuedAt:  time.Now().Unix(),
-			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+			ExpiresAt: time.Now().Add(time.Duration(expSec) * time.Second).Unix(),
 			Issuer:    "wl",
 		},
 		d.GetAuthData(),
