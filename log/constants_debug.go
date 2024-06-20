@@ -1,8 +1,7 @@
-// +build debug
+//go:build !release
+// +build !release
 
 package log
-
-import ()
 
 const (
 	DEBUG = true
