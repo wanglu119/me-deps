@@ -39,7 +39,9 @@ func (r *Response) SendJson() (int, error) {
 func ProcError(res *Response, err error) {
 	errMsg := fmt.Sprintf("%v", err)
 	res.Data = errMsg
-	res.Status = http.StatusInternalServerError
+	if res.Status == http.StatusOK {
+		res.Status = http.StatusInternalServerError
+	}
 }
 
 // -----------------------------------------------------------
