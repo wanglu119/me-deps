@@ -46,7 +46,7 @@ func getEngine() (*xorm.Engine, error) {
 		connStr = "file:" + config.Database.Path + "?cache=shared&mode=rwc"
 	case "mysql":
 		//  "root:root@tcp(127.0.0.1:3306)/xorm?charset=utf8"
-		connStr = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8",
+		connStr = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&loc=Local",
 			config.Database.User, config.Database.Password,
 			config.Database.Host, config.Database.Name)
 	default:
