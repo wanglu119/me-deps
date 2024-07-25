@@ -35,3 +35,7 @@ func (t Time) String() string {
 func (t Time) Format(format string) string {
 	return time.Time(t).Format(format)
 }
+
+func (t Time) Time() time.Time {
+	return time.Time(t)
+}
