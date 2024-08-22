@@ -38,6 +38,9 @@ func Init() error {
 
 func getEngine() (*xorm.Engine, error) {
 	connStr := ""
+	if len(config.Database.Charset) == 0 {
+		config.Database.Charset = "utf8"
+	}
 	switch config.Database.Type {
 	case "sqlite3":
 		if err := os.MkdirAll(path.Dir(config.Database.Path), os.ModePerm); err != nil {
@@ -46,9 +49,9 @@ func getEngine() (*xorm.Engine, error) {
 		connStr = "file:" + config.Database.Path + "?cache=shared&mode=rwc"
 	case "mysql":
 		//  "root:root@tcp(127.0.0.1:3306)/xorm?charset=utf8"
-		connStr = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&loc=Local",
+		connStr = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&loc=Local",
 			config.Database.User, config.Database.Password,
-			config.Database.Host, config.Database.Name)
+			config.Database.Host, config.Database.Name, config.Database.Charset)
 	default:
 		return nil, fmt.Errorf("unknow database type: %s", config.Database.Type)
 	}
