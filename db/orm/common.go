@@ -66,12 +66,12 @@ func (c *Common) UpdateOne(bean interface{}, condiBean interface{}) error {
 }
 
 func (c *Common) DeleteOne(bean interface{}) error {
-	return c.DeleteOne(bean)
+	_, err := x.Delete(bean)
+	return err
 }
 
 func (c *Common) DeleteMany(bean interface{}) error {
-	_, err := x.Delete(bean)
-	return err
+	return c.DeleteOne(bean)
 }
 
 func (c *Common) Count(bean interface{}) (int64, error) {
