@@ -27,6 +27,10 @@ func (c *Common) FindOne(bean interface{}) error {
 	return nil
 }
 
+func (c *Common) Get(beans ...interface{}) (bool, error) {
+	return x.Get(beans...)
+}
+
 func (c *Common) Find(beans interface{}, condiBean interface{}) error {
 	var err error
 	if condiBean == nil || reflect.ValueOf(condiBean).IsNil() {
